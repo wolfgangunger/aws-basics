@@ -1,0 +1,3 @@
+See
+https://bitnami.com/stack/jenkins/cloud/aws
+for maschine images

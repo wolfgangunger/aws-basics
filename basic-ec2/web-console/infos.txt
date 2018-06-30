@@ -1,0 +1,7 @@
+Important Parameters & Requirements:
+-Infrastructure ( VPC, Subnet, Security Group ..)
+-Machine Image
+-Instance Type
+-Role
+-Security Group
+-Key Pair
