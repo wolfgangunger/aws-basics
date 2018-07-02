@@ -1,9 +1,11 @@
 #!/bin/bash
+sudo su
 yum update -y
 yum install httpd php php-mysql stress -y
 cd /etc/httpd/conf
 cp httpd.conf httpdconfbackup.conf
 rm -rf httpd.conf
+#wget https://s3-eu-west-1.amazonaws.com/acloudguru-wp/httpd.conf
 wget https://github.com/wolfgangunger/aws-basics/blob/master/basic-wordpress/httpd.conf
 cd /var/www/html
 echo "healthy" > healthy.html
