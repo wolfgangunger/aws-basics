@@ -1,13 +1,33 @@
 Description: 'Simple EC2 Jenkins'
 # by wolfgang unger 3.2018 
 
+Parameters:
+
+    Subnet:
+        Description: Choose which subnets the Application Load Balancer should be deployed to
+        Type: AWS::EC2::Subnet::Id
+
+    SecurityGroup:
+        Description: Select the Security Group to use for the ECS cluster hosts
+        Type: AWS::EC2::SecurityGroup::Id
+        
+    KeyPairName:
+        Description: Select your KeyPair
+        Type: String
+        Default: ungerw-irland
+
 Resources:
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-0c4c905a400b59a87
-      InstanceType: t2.micro
+      #ImageId: ami-0c4c905a400b59a87
+      ImageId: ami-0f969f0687d413b62
+      InstanceType: m1.small
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref Subnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
       Tags:
         -
           Key: 'Name'
-          Value: 'Jenkins'  
+          Value: !Sub ${AWS::StackName} 

@@ -1,13 +1,21 @@
 Description: 'Simple EC2 Artifactory'
 # by wolfgang unger 3.2018 
 #
+Parameters:
+
+    KeyPairName:
+        Description: Select your KeyPair
+        Type: String
+        Default: ungerw-irland
+        
 Resources:
   MyInstance:
     Type: AWS::EC2::Instance
     Properties:
-      # irland: ami-0139299cc48861443
+      # irland:
       ImageId: ami-0139299cc48861443
       InstanceType: t2.micro
+      KeyName: !Ref KeyPairName
       Tags:
         -
           Key: 'Name'

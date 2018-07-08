@@ -13,9 +13,9 @@ Parameters:
         Type: String
         Default: t2.micro
         
-    VPC:
-        Description: Choose which VPC this ECS cluster should be deployed to
-        Type: AWS::EC2::VPC::Id
+    Subnet:
+        Description: Choose which subnets the Application Load Balancer should be deployed to
+        Type: AWS::EC2::Subnet::Id
         
     SecurityGroup:
         Description: Select the Security Group to use for the ECS cluster hosts
@@ -24,7 +24,7 @@ Parameters:
     KeyPairName:
         Description: Select your KeyPair
         Type: String
-        Default: f5-irl
+        Default: ungerw-irland
 
  ##############################
 Resources:
@@ -34,12 +34,13 @@ Resources:
       ImageId: !Ref InstanceImageId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyPairName
+      SubnetId: !Ref Subnet
       SecurityGroupIds:
         - !Ref SecurityGroup
       Tags:
         -
           Key: 'Name'
-          Value: 'MyInstance'          
+          Value: !Sub ${AWS::StackName}     
 
   # an elastic IP for our instance
   MyEIP:
