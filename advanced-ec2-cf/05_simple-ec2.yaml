@@ -1,0 +1,10 @@
+Description: 'Simple EC2 Instance'
+# by wolfgang unger 3.2018 
+#
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      # irland: ami-466768ac
+      ImageId: ami-466768ac
+      InstanceType: t2.micro

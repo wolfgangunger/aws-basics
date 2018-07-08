@@ -4,10 +4,11 @@ https://github.com/wolfgangunger/aws-basics/tree/master/advanced-ec2-cli
 
 Overview :
 
-AWS CLI EC2 commands
+EC2 by Cloud Formation
 
 Additional Infos:
-CLI: 
-https://docs.aws.amazon.com/cli/latest/reference/ec2/
+Cloud Formation: 
+https://aws.amazon.com/documentation/cloudformation/?nc1=h_ls
+https://docs.aws.amazon.com/de_de/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html
 
 

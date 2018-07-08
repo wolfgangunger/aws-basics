@@ -1,0 +1,14 @@
+Description: 'Simple EC2 Artifactory'
+# by wolfgang unger 3.2018 
+#
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      # irland: ami-0139299cc48861443
+      ImageId: ami-0139299cc48861443
+      InstanceType: t2.micro
+      Tags:
+        -
+          Key: 'Name'
+          Value: 'Artifactory'  

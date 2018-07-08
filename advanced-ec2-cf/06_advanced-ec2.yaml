@@ -1,0 +1,48 @@
+Description: 'Advanced EC2 Instance'
+# by wolfgang unger 3.2018 
+
+Parameters:
+
+    InstanceImageId:
+        Description: Which IAM for your instance ?
+        Type: String
+        Default: ami-466768ac
+        
+    InstanceType:
+        Description: Which instance type should we use to build the ECS cluster?
+        Type: String
+        Default: t2.micro
+        
+    VPC:
+        Description: Choose which VPC this ECS cluster should be deployed to
+        Type: AWS::EC2::VPC::Id
+        
+    SecurityGroup:
+        Description: Select the Security Group to use for the ECS cluster hosts
+        Type: AWS::EC2::SecurityGroup::Id
+        
+    KeyPairName:
+        Description: Select your KeyPair
+        Type: String
+        Default: f5-irl
+
+ ##############################
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref InstanceImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      Tags:
+        -
+          Key: 'Name'
+          Value: 'MyInstance'          
+
+  # an elastic IP for our instance
+  MyEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref MyInstance

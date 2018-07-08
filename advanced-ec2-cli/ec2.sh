@@ -13,5 +13,5 @@ aws ec2 stop-instances --instance-ids i-0b4a0702930e42aed
 
 aws ec2 start-instances --instance-ids i-0b4a0702930e42aed
 
-aws ec2 terminate-instances --instance-ids i-0102ae2a8c41715e8
+aws ec2 terminate-instances --instance-ids i-0b4a0702930e42aed
 

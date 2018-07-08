@@ -1,0 +1,13 @@
+Description: 'Simple EC2 Jenkins'
+# by wolfgang unger 3.2018 
+
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c4c905a400b59a87
+      InstanceType: t2.micro
+      Tags:
+        -
+          Key: 'Name'
+          Value: 'Jenkins'  
