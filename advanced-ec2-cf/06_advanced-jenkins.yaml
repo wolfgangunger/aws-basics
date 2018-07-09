@@ -10,7 +10,6 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentVPCStack
-      - SecurityGroupId
       - ParentAlertStack
       
     - Label:
@@ -31,6 +30,7 @@ Metadata:
       - MasterInstanceType
       - MasterAdminPassword
       - MasterLogsRetentionInDays
+      
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -41,10 +41,6 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: UngerwAlerting  
-    
-  SecurityGroupId:
-    Description: Select the Security Group to use for the ECS cluster hosts
-    Type: AWS::EC2::SecurityGroup::Id
     
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the Jenkins master.'
@@ -160,15 +156,17 @@ Resources:
       - Key: Name
         Value: 'jenkins-master-storage'
       PerformanceMode: generalPurpose
+      
+ #############Alarms 
   MasterStoragePercentIOLimitTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
+      AlarmDescription: 'Average IO utilization over last 5 minutes higher than 80%'
       Namespace: 'AWS/EFS'
       MetricName: PercentIOLimit
       Statistic: Average
-      Period: 600
+      Period: 300
       EvaluationPeriods: 1
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
@@ -177,6 +175,7 @@ Resources:
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
+        
   MasterStorageBurstCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -185,7 +184,7 @@ Resources:
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
       Statistic: Average
-      Period: 600
+      Period: 300
       EvaluationPeriods: 1
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
@@ -194,6 +193,99 @@ Resources:
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
+        
+  MasterHTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
+      TreatMissingData: notBreaching
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+  MasterHTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      TreatMissingData: notBreaching
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+  MasterRejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      TreatMissingData: notBreaching
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+        
+  MasterTargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      TreatMissingData: notBreaching
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+
+  MasterCPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Master average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref MasterASG                
+##########        
   MasterStorageMountTargetA:
     Type: 'AWS::EFS::MountTarget'
     Properties:
@@ -225,75 +317,8 @@ Resources:
       ToPort: 80
       CidrIp: '0.0.0.0/0'
 
-  MasterHTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt MasterELB.LoadBalancerFullName
-  MasterHTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt MasterELB.LoadBalancerFullName
-  MasterRejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt MasterELB.LoadBalancerFullName
-  MasterTargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer could not connect to targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: TargetConnectionErrorCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt MasterELB.LoadBalancerFullName
 
+        
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -309,6 +334,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'jenkins-master'
+        
   MasterELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -340,6 +366,7 @@ Resources:
       LoadBalancerArn: !Ref MasterELB
       Port: 80
       Protocol: HTTP
+      
   MasterIP:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -422,10 +449,12 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+      
   MasterLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref MasterLogsRetentionInDays
+      
   MasterLC:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
@@ -731,6 +760,7 @@ Resources:
           #!/bin/bash -x
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLC --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
+          
   MasterASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
@@ -773,27 +803,9 @@ Resources:
         - AlarmNotification
         - ScheduledActions
         WaitOnResourceSignals: true
-  MasterCPUTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Master average CPU utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/EC2'
-      MetricName: CPUUtilization
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 80
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref MasterASG
+
 Outputs:
-  TemplateID:
-    Description: 'cloudonaut.io template id'
-    Value: 'jenkins/jenkins2-ha'
+
   StackName:
     Description: 'Stack name'
     Value: !Sub '${AWS::StackName}'
