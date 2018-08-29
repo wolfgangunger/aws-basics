@@ -1,5 +1,6 @@
 #!/bin/bash
 yum install httpd php php-mysql -y
+sudo yum install polkit -y
 cd /var/www/html
 echo "healthy" > healthy.html
 wget https://wordpress.org/latest.tar.gz
@@ -12,4 +13,5 @@ chown -R apache:apache wp-content
 wget https://s3.amazonaws.com/bucketforwordpresslab-donotdelete/htaccess.txt
 mv htaccess.txt .htaccess
 chkconfig httpd on
+sudo service httpd start 
 
