@@ -13,6 +13,7 @@ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hosting-wordpress.html
 1. 
 select wordpress image 
  user and password in instance log
+(you can install other stuff like wiki, jenkins, nexus simular like this) 
 
 2. 
 -setup mysql database on AWS RDS 
