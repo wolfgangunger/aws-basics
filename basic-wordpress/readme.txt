@@ -18,7 +18,7 @@ select wordpress image
 setup mysql database
 
 select AMI and paste wordpress.sh into launch configuration
-nano wp-config.php
+(sudo) nano wp-config.php
 
 
 wget https://s3.eu-central-1.amazonaws.com/ungerw-aws-examples/wp-config.php 
