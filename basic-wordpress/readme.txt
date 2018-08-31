@@ -15,8 +15,12 @@ select wordpress image
  user and password in instance log
 
 2. 
-setup mysql database
-
+-setup mysql database on AWS RDS 
+if you use the standard security groups, which will be created, you might have to adapt the inbound rules, so your
+ec2-instance can access the database
+-setup ec2 instance
 select AMI and paste wordpress.sh into launch configuration
 (sudo) nano wp-config.php
+paste the content on the wordpress installation site in the file and save it
+
 
