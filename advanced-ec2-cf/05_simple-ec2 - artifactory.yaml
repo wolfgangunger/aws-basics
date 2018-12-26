@@ -2,7 +2,6 @@ Description: 'Simple EC2 Artifactory'
 # by wolfgang unger 3.2018 
 #
 Parameters:
-
     KeyPairName:
         Description: Select your KeyPair
         Type: String
