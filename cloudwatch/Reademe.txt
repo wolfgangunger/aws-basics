@@ -1,0 +1,9 @@
+Cloudwatch
+
+Dashboards
+Metrics
+Alarms
+Events
+Logs
+ Insights
+filter @message like /Exception/
