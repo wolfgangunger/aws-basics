@@ -1,6 +1,6 @@
 provider "aws" {
-  region = "eu-west-2"
-  profile = "ntt-admin"
+  region = "eu-central-1"
+  profile = "ntt"
 }
 
 resource "aws_db_instance" "rds_postgres" {
@@ -13,13 +13,14 @@ resource "aws_db_instance" "rds_postgres" {
   storage_type      = "gp2"
 
   name              = "mydb"
-  username          = "nttdata"
-  password          = "$mysql31415"
+  username          = "pgadmin"
+  password          = "${var.password}"
 
   port              = "5432"
+  final_snapshot_identifier = "${var.final_snapshot_identifier}"
 
   vpc_security_group_ids      = [
-    "sg-00d26bd9d3b421e6a"
+    "${aws_security_group.rds.id}"
   ]
 
   db_subnet_group_name        = "${aws_db_subnet_group.rds.name}"
@@ -27,9 +28,9 @@ resource "aws_db_instance" "rds_postgres" {
 }
 
 resource "aws_db_subnet_group" "rds" {
-  name        = "db-subnet-group-ungerw"
+  name        = "db-subnet-group"
   description = "Terraformed subnet group for RDS."
-  subnet_ids  = ["subnet-0559c1b6a3c948261","subnet-029b867087aa8617b"]
+  subnet_ids  = ["${var.subnet_ids}"]
 }
 
 resource "aws_db_parameter_group" "rds" {
@@ -48,7 +49,7 @@ resource "aws_db_parameter_group" "rds" {
 
 resource "aws_security_group" "rds" {
   name    = "rds-sg"
-  vpc_id  = "vpc-0c6f230c0178f3724"
+  vpc_id  = "${var.vpc_id}"
 }
 
 resource "aws_security_group_rule" "ingress_from_ntt" {
